@@ -8,34 +8,50 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 @RestController
 @RequestMapping("persons")
 public class PersonController {
 
-    private Map<String, Map> cache = new HashMap<>();
+    private Map<Person, String> personStringMap = new HashMap<>();
+    private Map<BadPerson, String> badPersonStringWeakHashMap = new WeakHashMap<>();
+    private Map<BadPerson, String> badPersonStringMap = new HashMap<>();
 
     @GetMapping("improperEqualsAndHash")
     public void someBadMapEntries(){
-        Map<BadPerson, String> leakingEntries= new HashMap<>();
         for (int i = 0; i < 1_000_000; i++) {
-            leakingEntries.put(new BadPerson("FirstName","LastName"), i+"_person_added");
+            badPersonStringMap.put(new BadPerson("FirstName","LastName"), i+"_person_added");
         }
-        cache.put("LeakingFirstNameLastName", leakingEntries);
+    }
+
+    @GetMapping("improperEqualsAndHashV2")
+    public void someBadMapEntriesWithWeakHashMap(){
+        for (int i = 0; i < 1_000_000; i++) {
+            badPersonStringWeakHashMap.put(new BadPerson("FirstName","LastName"), i+"_person_added");
+        }
     }
 
     @GetMapping("properEqualsAndHash")
     public void someMapEntries(){
-        Map<Person, String> nonLeakingEntries = new HashMap<>();
         for (int i = 0; i < 1_000_000; i++) {
-            nonLeakingEntries.put(new Person("FirstName", "LastName"), i+"_person_added");
+            personStringMap.put(new Person("FirstName", "LastName"), i+"_person_added");
         }
-        cache.put("NonLeakingFirstNameLastName", nonLeakingEntries);
     }
 
-    @GetMapping("cache")
-    public Map getCache(){
-        return cache;
+    @GetMapping("personCache")
+    public Map<Person, String> getCache(){
+        return personStringMap;
+    }
+
+    @GetMapping("personLeakingWeakCache")
+    public Map<BadPerson, String> fetchCache(){
+        return badPersonStringWeakHashMap;
+    }
+
+    @GetMapping("personLeakingCache")
+    public Map<BadPerson, String> fetchLeakingCache(){
+        return badPersonStringMap;
     }
 
 }
